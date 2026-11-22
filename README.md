@@ -22,18 +22,21 @@ time from the menu: **Language**.
 
 ## Getting started
 
-1. Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
-2. Build the app. The repository contains source code only, so this step creates the exe:
-
-   ```powershell
-   dotnet publish src/DeviceBatteryTray/DeviceBatteryTray.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist
-   ```
-
-3. Copy `dist\DeviceBatteryTray.exe` to `C:\Program Files\DeviceBatteryTray\` and start it.
+1. Install the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
+2. Download `DeviceBatteryTray.exe` from [Releases](../../releases/latest).
+   Every release is built by GitHub Actions from a tagged commit; the release page shows how to
+   verify the file.
+3. Copy it to `C:\Program Files\DeviceBatteryTray\` and start it.
 4. Windows 11 hides new tray icons at first. Turn them on in
    **Settings > Personalization > Taskbar > Other system tray icons**.
 5. Click any icon for the menu: refresh, choose which devices to show, change an icon type,
    start with Windows, language.
+
+Prefer to build it yourself? Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) and run:
+
+```powershell
+dotnet publish src/DeviceBatteryTray/DeviceBatteryTray.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist
+```
 
 ## Which devices work
 

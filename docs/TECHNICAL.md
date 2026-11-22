@@ -60,6 +60,26 @@ UI text lives in `src/DeviceBatteryTray/Ui/Strings.resx` (English) and `Strings.
 English, and can be changed from the menu. `LocalizationTests` fails if a translation is missing
 or a format placeholder is lost.
 
+## Build and release
+
+| Workflow | Trigger | Does |
+|---|---|---|
+| `ci.yml` | push to `main`, pull requests | builds, runs all tests, keeps the exe as a 14-day artifact |
+| `release.yml` | **Actions > Release > Run workflow**, enter a version | checks the version and that CI passed on `main`, creates tag `vX.Y.Z`, builds and tests that tag, checks the exe carries `X.Y.Z+<commit>`, writes `SHA256SUMS.txt`, creates a signed [build provenance attestation](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations), publishes the GitHub release |
+
+- Only official GitHub actions are used, each pinned to an exact commit; Dependabot proposes
+  updates as pull requests.
+- Every job gets the minimum permissions it needs; only the release jobs can write.
+- The SDK version is pinned in `global.json`, so CI and local builds use the same compiler.
+- Release tags cannot be moved or deleted, and `main` cannot be force-pushed (repository rulesets).
+
+Verify a downloaded release:
+
+```powershell
+Get-FileHash .\DeviceBatteryTray.exe -Algorithm SHA256   # compare with SHA256SUMS.txt
+gh attestation verify .\DeviceBatteryTray.exe -R konstantinpovaliaev/DeviceBatteryTray
+```
+
 ## Code map
 
 | Area | Files |

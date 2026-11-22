@@ -1,0 +1,12 @@
+# Keeps the pinned action commits and the test packages up to date through pull requests,
+# so every update is reviewed and goes through CI before it is used.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly

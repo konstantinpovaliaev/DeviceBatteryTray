@@ -1,0 +1,178 @@
+# Creates a release from the current main branch, started by hand:
+# Actions > Release > Run workflow > enter a version such as 1.0.0.
+#
+#   tag:     checks the version and that CI passed on this commit, then creates tag vX.Y.Z
+#   build:   builds and tests exactly that tag, writes SHA256SUMS.txt and a signed
+#            build-provenance attestation for the exe
+#   publish: creates the GitHub release with the exe and the checksums
+#
+# Everything runs in one workflow on purpose: a tag pushed with the workflow token does not
+# start other workflows, so a separate "on: push tags" release workflow would never run.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (MAJOR.MINOR.PATCH, e.g. 1.0.0)
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Check and tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the tag
+      actions: read   # check the CI result for this commit
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Check version, branch and CI
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version must look like 1.2.3, got '$VERSION'"; exit 1
+          fi
+          if [[ "$REF" != "refs/heads/main" ]]; then
+            echo "::error::Releases are made from main only (started on $REF)"; exit 1
+          fi
+          TAG="v$VERSION"
+          if gh api "repos/$REPO/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists"; exit 1
+          fi
+          PASSED=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&status=success" --jq '.total_count')
+          if [[ "$PASSED" -lt 1 ]]; then
+            echo "::error::CI has not passed on $SHA yet; wait for it or fix the build"; exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          TAG: ${{ steps.check.outputs.tag }}
+        run: gh api "repos/$REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$SHA" >/dev/null
+
+  build:
+    name: Build ${{ needs.tag.outputs.tag }}
+    needs: tag
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write     # sign the attestation (Sigstore)
+      attestations: write # store the attestation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.tag.outputs.tag }}
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        shell: pwsh
+        run: dotnet test DeviceBatteryTray.slnx -c Release
+
+      - name: Publish
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.tag.outputs.version }}
+        run: >-
+          dotnet publish src/DeviceBatteryTray/DeviceBatteryTray.csproj
+          -c Release -r win-x64 --self-contained false
+          -p:PublishSingleFile=true -p:ContinuousIntegrationBuild=true
+          -p:Version=$env:VERSION
+          -o dist
+
+      - name: Check that the exe names this version and commit
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.tag.outputs.version }}
+          SHA: ${{ github.sha }}
+        run: |
+          $product = (Get-Item dist/DeviceBatteryTray.exe).VersionInfo.ProductVersion
+          if ($product -ne "$env:VERSION+$env:SHA") { throw "exe says '$product', expected '$env:VERSION+$env:SHA'" }
+          "exe version: $product"
+
+      - name: Checksums
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash dist/DeviceBatteryTray.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          # sha256sum format: also works with `sha256sum -c SHA256SUMS.txt`
+          [IO.File]::WriteAllText("dist/SHA256SUMS.txt", "$hash  DeviceBatteryTray.exe`n")
+          Get-Content dist/SHA256SUMS.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/DeviceBatteryTray.exe
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: |
+            dist/DeviceBatteryTray.exe
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish release
+    needs: [tag, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: release
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.tag.outputs.tag }}
+          VERSION: ${{ needs.tag.outputs.version }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          HASH=$(cut -d' ' -f1 release/SHA256SUMS.txt)
+          cat > notes.md <<EOF
+          Built by GitHub Actions from commit [\`${SHA:0:7}\`](https://github.com/$REPO/commit/$SHA) ([build log]($RUN_URL)).
+
+          **Requires** the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
+
+          ### Verify the download
+
+          \`DeviceBatteryTray.exe\` SHA-256: \`$HASH\`
+
+          \`\`\`powershell
+          Get-FileHash .\DeviceBatteryTray.exe -Algorithm SHA256
+          gh attestation verify .\DeviceBatteryTray.exe -R $REPO
+          \`\`\`
+
+          The app menu shows \`DeviceBatteryTray $VERSION (${SHA:0:7})\`.
+          EOF
+          gh release create "$TAG" release/DeviceBatteryTray.exe release/SHA256SUMS.txt \
+            --repo "$REPO" --title "DeviceBatteryTray $VERSION" --notes-file notes.md --verify-tag
