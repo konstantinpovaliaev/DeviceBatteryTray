@@ -12,7 +12,7 @@
 
   <!-- MSTest (Microsoft) is used by the test project only; the app has no packages. -->
   <ItemGroup>
-    <PackageReference Include="MSTest" Version="4.0.2" />
+    <PackageReference Include="MSTest" Version="4.5.3" />
   </ItemGroup>
 
   <ItemGroup>
