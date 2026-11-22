@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="RefreshNow" xml:space="preserve"><value>Абнавіць зараз</value></data>
+  <data name="Devices" xml:space="preserve"><value>Прылады</value></data>
+  <data name="NoDevices" xml:space="preserve"><value>Прылад са звесткамі пра зарад не знойдзена</value></data>
+  <data name="AllHidden" xml:space="preserve"><value>Усе прылады схаваныя (правы клік — меню)</value></data>
+  <data name="StartWithWindows" xml:space="preserve"><value>Запускаць разам з Windows</value></data>
+  <data name="LowBatteryNotifications" xml:space="preserve"><value>Апавяшчаць пра нізкі зарад</value></data>
+  <data name="LogFile" xml:space="preserve"><value>Журнал: {0}</value></data>
+  <data name="Exit" xml:space="preserve"><value>Выхад</value></data>
+  <data name="LowBatteryTitle" xml:space="preserve"><value>Нізкі зарад</value></data>
+  <data name="NotConnected" xml:space="preserve"><value>не падключана (рэжым сну?)</value></data>
+  <data name="NoData" xml:space="preserve"><value>няма звестак</value></data>
+  <data name="ShowIcon" xml:space="preserve"><value>Паказваць значок</value></data>
+  <data name="IconKind" xml:space="preserve"><value>Тып значка</value></data>
+  <data name="KindAuto" xml:space="preserve"><value>Аўтаматычна</value></data>
+  <data name="KindKeyboard" xml:space="preserve"><value>Клавіятура</value></data>
+  <data name="KindMouse" xml:space="preserve"><value>Мыш</value></data>
+  <data name="KindHeadphones" xml:space="preserve"><value>Навушнікі</value></data>
+  <data name="KindSpeaker" xml:space="preserve"><value>Калонка</value></data>
+  <data name="KindGamepad" xml:space="preserve"><value>Геймпад</value></data>
+  <data name="KindOther" xml:space="preserve"><value>Іншае</value></data>
+  <data name="Language" xml:space="preserve"><value>Мова</value></data>
+  <data name="LanguageAuto" xml:space="preserve"><value>Мова сістэмы</value></data>
+</root>

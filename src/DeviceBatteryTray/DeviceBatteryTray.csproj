@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DeviceBatteryTray</RootNamespace>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Version>1.0.0</Version>
+    <Product>DeviceBatteryTray</Product>
+    <Copyright>Copyright (c) 2026 Kanstantsin Pavaliayeu. MIT License.</Copyright>
+    <Description>Shows battery levels of wireless devices as tray icons. No network access.</Description>
+  </PropertyGroup>
+
+  <!-- Deliberately no PackageReference: the app uses only the .NET base library, Windows Forms and Win32. -->
+
+</Project>
